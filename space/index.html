@@ -1,0 +1,709 @@
+<!doctype html> 
+<meta charset="utf-8"> 
+<style type="text/css">
+	@font-face {
+		font-family: sampa;
+		src: url("fonts/sampa.ttf");
+	}
+
+	body {
+		background: #000;
+		text-align: center;
+	}
+
+	#stage {
+		background-image: url("images/bg.png");
+		height: 512px;
+		width: 448px;
+		margin-top: 100px;
+	}
+
+	#background {
+		margin-top: 11px;
+		text-shadow: #5dc8e5 0 0 10px;
+	}
+
+	#menu
+	{		
+	position: absolute;
+	margin-top: 11px;
+	margin-left: 11px;
+	display: none;
+	}
+
+	#start {		
+	position: absolute;
+	margin-top: 58px;
+	margin-left: 140px;
+
+	display: none;
+	}
+
+
+
+		
+
+</style>
+
+<body>
+	
+	<center>
+		
+		<div id=stage>
+			
+			<input type="image" src="images/menu.png" id="menu">
+			<input type="image" src="images/start.png" id="start" onclick="play()">
+
+			<canvas width="425" height="490" id="background">
+				
+			</canvas>
+		</div>
+	</center>
+
+	<audio id="shootSound">
+		<source src="audio/weapon_player.mp3" type="audio/mpeg">
+	</audio>
+
+	<audio id="bgSound">
+		<source src="audio/background.mp3" type="audio/mpeg" loop>
+	</audio>
+
+	<audio id="explosionEnemy">
+		<source src="audio/explosion_enemy.mp3" type="audio/mpeg">
+	</audio>
+</body>
+
+
+<script type="text/javascript">
+
+
+	var spriteObject = {
+		sourceX: 0,
+		sourceY: 0,
+
+		centerX: function() {
+			return this.x + (this.width / 2);
+		},
+		centerY: function() {
+			return this.y + (this.height / 2);
+		},
+		halfWidth: function() {
+			return this.width / 2;
+		},
+		halfHeight: function() {
+			return this.height / 2;
+		}
+	};
+
+	var music = document.querySelector("#music");
+
+	var canvas = document.querySelector("canvas");
+	var drawingSurface = canvas.getContext("2d");
+
+	var image = new Image();
+		image.addEventListener("load", loadHandler, false);
+		image.src = "images/sheet.png";
+
+	var sprites = [];
+	var assets = [];
+	var missiles = [];
+	var emissiles = [];
+	var aliens = [];
+	var messages = [];
+	var asteroids = [];
+
+	var alienFrequency = 500;
+	var asteroidFrequency = 80;
+
+	var asteroidtimer = 0;
+	var alienTimer = 0;
+
+	var shootSound = document.querySelector("#shootSound");
+		shootSound.addEventListener("canplaythrough", loadHandler, false);
+		shootSound.load();
+	assets.push(shootSound);
+	
+
+	var explosionEnemy = document.querySelector("#explosionEnemy");
+		explosionEnemy.addEventListener("canplaythrough", loadHandler, false);
+		explosionEnemy.load();
+	assets.push(explosionEnemy);
+
+	var background_1 = Object.create(spriteObject);
+		background_1.x = 0;
+		background_1.y = 0;
+		background_1.sourceY = 0;
+		background_1.sourceWidth = 450;
+		background_1.sourceHeight = 847;
+		background_1.width = 450;
+		background_1.height = 847;
+	sprites.push(background_1);
+
+	var background_2 = Object.create(spriteObject);
+		background_2.x = 0;
+		background_2.y = 0 - (background_1.y + background_1.height);
+		background_2.sourceY = 846;
+		background_2.sourceWidth = 450;
+		background_2.sourceHeight = 847;
+		background_2.width = 450;
+		background_2.height = 847;
+	sprites.push(background_2);
+
+	var sparkle_1 = Object.create(spriteObject);
+		sparkle_1.x = 0;
+		sparkle_1.y = 0;
+		sparkle_1.sourceY = 1695;
+		sparkle_1.sourceWidth = 450;
+		sparkle_1.sourceHeight = 847;
+		sparkle_1.width = 450;
+		sparkle_1.height = 847;
+	sprites.push(sparkle_1);
+
+	var sparkle_2 = Object.create(spriteObject);
+		sparkle_2.x = 0;
+		sparkle_2.y = sparkle_1.y + sparkle_1.height;
+		sparkle_2.sourceY = 1695;
+		sparkle_2.sourceWidth = 450;
+		sparkle_2.sourceHeight = 847;
+		sparkle_2.width = 450;
+		sparkle_2.height = 847;
+	sprites.push(sparkle_2);
+
+	var player = Object.create(spriteObject);
+		player.sourceY = 2542;
+		player.sourceX = 0;
+		player.sourceWidth = 33;
+		player.sourceHeight = 72;
+		player.width = 33;
+		player.height = 72;
+		player.vx = 0;
+		player.vy = 0;
+		player.x = (canvas.width / 2) - (player.width/2);
+		player.y = 400;
+	sprites.push(player);
+
+	var messageObject = {
+		x: 0,
+		y: 0,
+		visible: true,
+		text: "Message",
+		font: "normal bold 20px Helvetica",
+		fillStyle: "#044f4c",
+		textBaseline: "top"
+	};
+
+	var alienObject = Object.create(spriteObject);
+		alienObject.width= 56;
+		alienObject.height= 62;
+		alienObject.numberOfFrames= 7;
+		alienObject.currentFrame= 0;
+		alienObject.sourceX= 0;
+		alienObject.sourceY= 2763;
+	sprites.push(alienObject);
+
+	var asteroidObject = Object.create(spriteObject);
+		asteroidObject.height =48;
+		asteroidObject.sourceY = 2825;
+		asteroidObject.sourceX = 0;
+		asteroidObject.width = 34;
+		asteroidObject.NORMAL = 1;
+		asteroidObject.EXPLODED = 2;
+		asteroidObject.state = asteroidObject.NORMAL;
+
+	sprites.push(asteroidObject);
+
+
+	var assetsLoaded = 0;
+
+	var i = 0;
+
+
+	var music = document.querySelector("#bgSound");
+	music.addEventListener("canplaythrough", loadHandler, false);
+	music.load();
+	assets.push(music);
+
+	var LOADING = 0;
+	var MENU = 1;
+	var PLAYING = 2;
+	var OVER = 3;
+	var gameState = LOADING;
+
+	var UP = 38;
+	var DOWN = 40;
+	var RIGHT = 39;
+	var LEFT = 37;
+	var SPACE = 32;
+
+	var moveUp = false;
+	var moveDown = false;
+	var moveRight = false;
+	var moveLeft = false;
+	var space = false;
+
+	var shoot = false;
+	var enemyshoot = false;
+
+	var score = 0;
+	var winscore = 15;
+	var xo = 0;
+
+	var scoreDisplay = Object.create(messageObject);
+		scoreDisplay.font = "30px sampa";
+		scoreDisplay.fillStyle = "#d6187a";
+		scoreDisplay.x = 9;
+		scoreDisplay.y = 4;
+	messages.push(scoreDisplay);
+
+	var gameOverMessage = Object.create(messageObject);
+		gameOverMessage.font = " 20px sampa";
+		gameOverMessage.fillStyle = "#d6187a";
+		gameOverMessage.x = 45;
+		gameOverMessage.y = 390;
+		gameOverMessage.visible = false;
+	messages.push(gameOverMessage);
+
+
+	window.addEventListener("keydown", function(event) {
+		switch(event.keyCode) {
+			case LEFT:
+			moveLeft = true;
+			break;
+
+			case RIGHT:
+			moveRight = true;
+			break;
+
+			case UP:
+			moveUp = true;
+			break;
+
+			case DOWN:
+			moveDown = true;
+			break;
+
+			case SPACE:
+			if(!space) {
+				shoot = true;
+				space = true;
+			}
+		}
+	}, false);
+
+	window.addEventListener("keyup", function(event) {
+		switch(event.keyCode) {
+			case LEFT:
+			moveLeft = false;
+			break;
+
+			case RIGHT:
+			moveRight = false;
+			break;
+
+			case UP:
+			moveUp = false;
+			break;
+
+			case DOWN:
+			moveDown = false;
+			break;
+
+			case SPACE:
+			space = false;
+			break;
+		}
+	}, false);
+
+	update();
+
+	function update() {
+		requestAnimationFrame(update, canvas);
+
+		switch(gameState) {
+
+			case LOADING:
+			console.log("Загрузка...");
+			break;
+
+			case MENU:
+			document.getElementById('menu').style.display = "block"; 
+			document.getElementById('start').style.display = "block";			
+			break;
+		
+			case PLAYING:
+			playGame(); 
+			break;
+
+			case OVER:
+			endGame();
+			break;
+		}
+
+		render();
+	}
+
+	function loadHandler() {
+		if (xo == 0) {
+			gameState = MENU;
+		}
+		else 
+			gameState = PLAYING;
+
+	}
+
+	
+
+	function makeAsteroid() {
+		var t = getRandomInt(1,4);
+		var asteroid = Object.create(asteroidObject);
+			asteroid.y = 0 - asteroid.height;
+			asteroid.x =  getRandomInt(20,380);
+			asteroid.vy = 1;
+			if (t == 1) {
+				asteroid.sourceX = 0;
+				asteroid.sourceY = 2825;
+				asteroid.sourceWidth = 34;
+				asteroid.sourceHeight = 48;
+				asteroid.width = 34;
+				asteroid.height = 48;
+			}
+
+			else if (t == 2) {
+				asteroid.sourceX = 35;
+				asteroid.sourceY = 2825;
+				asteroid.sourceWidth = 52;
+				asteroid.sourceHeight = 35;
+				asteroid.width = 52;
+				asteroid.height = 35;
+			}
+
+			else  {
+				asteroid.sourceX = 86;
+				asteroid.sourceY = 2825;
+				asteroid.sourceWidth = 33;
+				asteroid.sourceHeight = 50;
+				asteroid.width = 33;
+				asteroid.height = 50;
+			}
+
+		sprites.push(asteroid);
+		asteroids.push(asteroid);
+}
+
+	function play() {
+		document.getElementById('menu').style.display = "none";
+		document.getElementById('start').style.display = "none";
+		gameState = PLAYING; 
+	}
+
+	function fireMissile() {
+		var missile = Object.create(spriteObject);
+			missile.sourceX = 0;
+			missile.sourceY = 2686;
+			missile.sourceWidth = 10;
+			missile.sourceHeight = 16;
+			missile.width = 10;
+			missile.height = 16;
+			missile.x = player.x + 12;
+			missile.y = player.y - missile.height + 8;
+			missile.vy = -8;
+
+		sprites.push(missile);
+		missiles.push(missile);
+
+		shootSound.currentTime = 0;
+		shootSound.play();
+		shootSound.volume = 1;
+	}
+
+	function playGame() {
+		music.play();
+		music.volume = 0.5;
+		xo = 1;
+		if(moveUp && !moveDown) {
+			player.sourceY = 2614;
+			player.vy = -4; 
+		}  
+				
+		if(moveDown && !moveUp) {
+			player.sourceY = 2542;
+			player.vy = 4; 
+		}
+
+		if(moveLeft && !moveRight) {
+			player.vx = -4; 
+			player.sourceX = 33;  
+		}
+		
+		if(moveRight && !moveLeft) {
+			player.vx = 4; 
+			player.sourceX = 66; 
+		}
+
+		if(!moveUp && !moveDown) {
+			player.sourceY = 2542;
+			player.vy = 0.5;    
+		}
+
+		if(!moveLeft && !moveRight) {    
+			player.vx = 0;
+			player.sourceX = 0; 
+		}
+
+		player.x = Math.max(0, Math.min(player.x + player.vx, canvas.width - player.width));
+		player.y = Math.max(100, Math.min(player.y + player.vy, canvas.height - player.height));
+			
+		background_1.y += 0.3;
+		background_2.y += 0.3;
+
+		if (background_1.y > 0)
+			background_2.y =  background_1.y - background_1.height;
+
+		if (background_2.y > 0)
+			background_1.y = background_2.y - background_1.height;
+
+		sparkle_1.y += 0.5;
+		sparkle_2.y += 0.5;
+
+		if (sparkle_1.y > 0)
+			sparkle_2.y = sparkle_1.y - sparkle_2.height;
+
+		if (sparkle_2.y > 0)
+			sparkle_1.y = sparkle_2.y - sparkle_1.height;
+
+		if(shoot) {
+			fireMissile();
+			shoot = false;
+		}
+
+		for(var i = 0; i < missiles.length; i++) {
+			var missile = missiles[i];
+				missile.y += missile.vy;
+				if(missile.y < 0 - missile.height) {
+					removeObject(missile, missiles);
+					removeObject(missile, sprites);
+					i--;
+				}
+		}
+
+		alienTimer++;
+
+		scoreDisplay.text = Math.floor(score/3);
+
+		if(score === winscore) {
+			gameState = OVER;
+		}
+
+		if(alienTimer === alienFrequency) {
+			makeAlien();
+			alienTimer = 0;
+			if(alienFrequency > 2) {
+				alienFrequency--;
+			}
+		}
+
+		for(var i = 0; i < aliens.length; i++) {
+			var alien = aliens[i];
+			if(alien.state === alien.NORMAL) {
+				alien.y += alien.vy;
+			}
+
+			if(alien.y > canvas.height + alien.height) {
+				removeObject(alien, aliens);
+				removeObject(alien, sprites);
+			}
+			if (hit(alien, player)) {
+				gameState = OVER;
+			}
+		}
+
+		asteroidtimer++;
+		if(asteroidtimer === asteroidFrequency) {
+			makeAsteroid();
+			asteroidtimer = 0;
+
+		}
+
+		for(var i = 0; i < asteroids.length; i++) {
+			var asteroid = asteroids[i];
+			if(asteroid.state === asteroid.NORMAL) {
+				asteroid.y += asteroid.vy;
+			}
+
+			if(asteroid.y > canvas.height + asteroid.height) {
+				removeObject(asteroid, asteroids);
+				removeObject(asteroid, sprites);
+			}
+
+			if (hit(asteroid, player)) {
+				gameState = OVER;
+			}
+		}
+
+
+		for(var i = 0; i < aliens.length; i++) {
+					var alien = aliens[i];
+					for(var j = 0; j < missiles.length; j++) {
+							var missile = missiles[j];
+							if(hit(missile, alien) && alien.state === alien.NORMAL) {
+								if (i = 3)
+									score++;
+								removeObject(missile, missiles);
+								removeObject(missile, sprites);
+								j--;
+
+								
+								alien.sourceY = 2763;
+								destroyAlien(alien);
+							}
+					}
+			}
+
+			for(var i = 0; i < asteroids.length; i++) {
+					var asteroid = asteroids[i];
+					for(var j = 0; j < missiles.length; j++) {
+							var missile = missiles[j];
+							if(hit(missile, asteroid) && asteroid.state === asteroid.NORMAL) {
+								removeObject(missile, missiles);
+								removeObject(missile, sprites);
+								j--;
+								
+								
+								destroyAsteroid(asteroid);
+							}
+					}
+			}
+			render();
+		} //playgame
+
+	function hit(r1, r2) {
+		var vx = r1.centerX() - r2.centerX();
+		var vy = r1.centerY() - r2.centerY();
+
+		var magnitude = Math.sqrt(vx * vx + vy * vy);
+
+		var totalRadii = r1.halfWidth() + r2.halfWidth();
+
+		var hit = magnitude < totalRadii;
+
+		return hit;
+	}
+
+	function makeAlien() {
+		var alien = Object.create(alienObject);
+			alien.sourceX = 0;
+			alien.sourceY = 2702;
+			alien.sourceWidth = 56;
+			alien.sourceHeight = 61;
+			alien.height = 61;
+			alien.width = 56;
+			alien.y = 0 - alien.height;
+			alien.x = getRandomInt(56,400);
+			alien.vy = 1;
+			alien.currentFrame = 0;
+			alien.numberOfFrames = 7;
+
+		sprites.push(alien);
+		aliens.push(alien);
+	}
+
+function updateAnimation(alien) {
+		alien.sourceY = 2763;
+		alien.sourceX = alien.currentFrame * alien.width;
+		alien.currentFrame++;
+		console.log(alien.currentFrame);
+		setInterval(iplus,500);
+		render();
+	if (alien.currentFrame == 3) {
+		removeAlien();
+		function removeAlien() {
+			removeObject(alien, aliens);
+			removeObject(alien, sprites);
+		}
+
+
+		explosionEnemy.currentTime = 0;
+		explosionEnemy.play();
+		explosionEnemy.volume = 1;
+	}
+}
+
+function iplus() {
+	i++;
+}
+
+
+
+	function destroyAlien(alien) {
+		updateAnimation(alien);	
+	}
+
+
+	function destroyAsteroid(asteroid) {
+		removeAsteroid();
+		function removeAsteroid() {
+			removeObject(asteroid, asteroids);
+			removeObject(asteroid, sprites);
+		}
+
+		explosionEnemy.currentTime = 0;
+		explosionEnemy.play();
+		explosionEnemy.volume = 1;
+	}
+
+
+	function removeObject(objectToRemove, array) {
+		var i = array.indexOf(objectToRemove);
+		if (i !== -1) {
+			array.splice(i, 1);
+		}
+	}
+
+	function getRandomInt(min, max) {
+		return Math.floor(Math.random() * (max - min)) + min;
+	}
+
+	function render() {
+		drawingSurface.clearRect(0, 0, canvas.width, canvas.height);
+		drawingSurface.save();
+
+		if(sprites.length !== 0)
+			for(var i = 0; i < sprites.length; i++) {
+				var sprite = sprites[i];
+				drawingSurface.drawImage(image, 
+					sprite.sourceX, sprite.sourceY,
+					sprite.sourceWidth, sprite.sourceHeight,
+					Math.floor(sprite.x), Math.floor(sprite.y),
+					sprite.width, sprite.height);
+			}
+
+		if(messages.length !== 0) {
+			for(var i = 0; i < messages.length; i++) {
+				var message = messages[i];
+				if(message.visible) {
+					drawingSurface.font = message.font;
+					drawingSurface.fillStyle = message.fillStyle;
+					drawingSurface.textBaseline = message.textBaseline;
+					drawingSurface.fillText(message.text, message.x, message.y);
+				}
+			}
+		}
+
+		drawingSurface.restore();
+	}
+
+	function endGame()
+	{
+		console.log("Game Over!");
+		gameOverMessage.visible = true;
+		if(score < winscore) {
+			gameOverMessage.text = "You lose. Try harder next time!";
+
+		}
+		else {
+			gameOverMessage.x = 150;
+			gameOverMessage.text = "You win. wow. Good job.";
+
+		}
+	}
+</script>

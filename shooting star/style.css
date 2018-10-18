@@ -1,0 +1,72 @@
+#output
+	{
+		color: #ffd40d;
+		position: absolute;
+		margin-top: 10px;
+		margin-left: 360px;
+		font-size: 23px; 
+	}
+
+#name
+	{
+		color: #ffd40d;
+		margin-left: 438px;
+		margin-top: 48px;
+		font-size: 20px;
+	}
+
+#number
+	{
+		color: #ffd40d;
+		position: absolute;
+		margin-left: 545px;
+		margin-top: -33px; 
+	}
+
+header 
+	{
+		background-image: url(images/header.png);
+		height: 208px;
+		width: 800px;
+		border: 4px outset #0b0310;
+		margin-left: -4px; 
+		margin-top: -3px; 
+	}
+
+body
+	{
+		background-color: #cbb7d8;
+	}
+
+#stage 
+	{
+		width: 800px;
+		height: 573px;
+		border: 4px outset #0b0310;
+		background-image: url(images/stage.png);
+	}
+
+canvas 
+	{
+		display: block;
+		position: absolute;
+		margin-left: 572px;
+		margin-top: 300px;
+		width: 62px;
+		height: 62px;
+	}
+
+#button 
+	{
+		position: absolute;
+		margin-left: -315px;  
+		margin-top: 120px;
+	}
+
+#res 
+	{
+		position: absolute;
+		margin-left: -315px;
+		margin-top: 170px;
+
+	}
